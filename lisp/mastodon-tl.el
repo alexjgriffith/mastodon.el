@@ -212,22 +212,59 @@ also render the html"
   (replace-regexp "\n\n\n | " "\n | " nil (point-min) (point-max))
   (mastodon-media--inline-images))
 
-(defun mastodon-tl--more-json (timeline id)
-  "Return JSON for TIMELINE before ID."
-  (let ((url (mastodon-http--api (concat "timelines/"
-                                         timeline
-                                         "?max_id="
-                                         (number-to-string id)))))
+(defun mastodon-tl--get-endpoint (string)
+  "Match STRING against buffer-names.
+
+Returns the matching plist"
+  (let* ((mastodon-buffer-endpoints ;; can be made a global var
+          '((buffer-name "home" endpoint "timelines/home"
+                         update-function mastodon-tl--timeline)
+            (buffer-name "local" endpoint "timelines/public?local=true"
+                         update-function mastodon-tl--timeline)
+            (buffer-name "federated" endpoint "timelines/public"
+                         update-function mastodon-tl--timeline)
+            (buffer-name "public?local=true"
+                         endpoint "timelines/public?local=true"
+                         update-function mastodon-tl--timeline)
+            (buffer-name "public"
+                         endpoint "timelines/public"
+                         update-function mastodon-tl--timeline)
+            (buffer-name "notifications"
+                         endpoint "notifications"
+                         update-function
+                         mastodon-notifications--notifications)))
+         (flet (lambda(end)
+                 (when (equal string (plist-get end 'buffer-name))
+                   (unless (functionp (plist-get end 'update-function))
+                     (error (format "%s not a function"
+                                    (plist-get end 'update-function))))
+                   (if (stringp (plist-get end 'endpoint))
+                        end
+                     (error (format "%s not a string"
+                                    (plist-get end 'endpoint)))))))
+         (endpoint (remove-if 'null
+                              (mapcar  flet
+                                       mastodon-buffer-endpoints))))
+    (if (car endpoint)
+        (car endpoint)
+      (error "%s is not a valid mastodon endpoint" string))))
+
+(defun mastodon-tl--more-json (endpoint id)
+  "Return JSON for timeline ENDPOINT before ID."
+  (let* ((url (mastodon-http--api (concat
+                                   endpoint
+                                  "?max_id="
+                                  (number-to-string id)))))
     (mastodon-http--get-json url)))
 
 ;; TODO
 ;; Look into the JSON returned here by Local
-(defun mastodon-tl--updated-json (timeline id)
-  "Return JSON for TIMELINE since ID."
-  (let ((url (mastodon-http--api (concat "timelines/"
-                                         timeline
-                                         "?since_id="
-                                         (number-to-string id)))))
+(defun mastodon-tl--updated-json (endpoint id)
+  "Return JSON for timeline ENDPOINT since ID."
+  (let ((url (mastodon-http--api (concat
+                                  endpoint
+                                  "?since_id="
+                                  (number-to-string id)))))
     (mastodon-http--get-json url)))
 
 (defun mastodon-tl--property (prop &optional backward)
@@ -272,13 +309,16 @@ Move forward (down) the timeline unless BACKWARD is non-nil."
   (interactive)
   (let* ((point-before (point))
          (tl (mastodon-tl--timeline-name))
+         (endpoint-plist (mastodon-tl--get-endpoint tl))
+         (endpoint (plist-get endpoint-plist 'endpoint))
+         (update-function (plist-get endpoint-plist 'update-function))
          (id (mastodon-tl--oldest-id))
-         (json (mastodon-tl--more-json tl id)))
+         (json (mastodon-tl--more-json endpoint id)))
     (when json
       (with-current-buffer (current-buffer)
         (let ((inhibit-read-only t))
           (goto-char (point-max))
-          (mastodon-tl--timeline json)
+          (funcall update-function json)
           (goto-char point-before)
           (mastodon-tl--goto-next-toot))))))
 
@@ -286,13 +326,16 @@ Move forward (down) the timeline unless BACKWARD is non-nil."
   "Update timeline with new toots."
   (interactive)
   (let* ((tl (mastodon-tl--timeline-name))
+         (endpoint-plist (mastodon-tl--get-endpoint tl))
+         (endpoint (plist-get endpoint-plist 'endpoint))
+         (update-function (plist-get endpoint-plist 'update-function))
          (id (mastodon-tl--newest-id))
-         (json (mastodon-tl--updated-json tl id)))
+         (json (mastodon-tl--updated-json endpoint id)))
     (when json
       (with-current-buffer (current-buffer)
         (let ((inhibit-read-only t))
           (goto-char (point-min))
-          (mastodon-tl--timeline json))))))
+          (funcall update-function json))))))
 
 (defun mastodon-tl--get (timeline)
   "Display TIMELINE in buffer."
