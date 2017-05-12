@@ -212,8 +212,8 @@ also render the html"
   (replace-regexp "\n\n\n | " "\n | " nil (point-min) (point-max))
   (mastodon-media--inline-images))
 
-(defun mastodon-tl--get-endpoint (string)
-  "Match STRING against buffer-names.
+(defun mastodon-tl--get-endpoint (buffer-string)
+  "Match BUFFER-STRING against buffer-names.
 
 Returns the matching plist"
   (let* ((mastodon-buffer-endpoints ;; can be made a global var
@@ -237,24 +237,30 @@ Returns the matching plist"
                          endpoint "notifications"
                          update-function
                          mastodon-notifications--notifications)))
-         (flet (lambda(end)
-                 (when (string-match (plist-get end 'buffer-name) string)
-                   (unless (functionp (plist-get end 'update-function))
-                     (error (format "%s not a function"
-                                    (plist-get end 'update-function))))
-                   (cond
-                    ((stringp (plist-get end 'endpoint)) end)
-                    ((functionp (plist-get end 'endpoint))
-                     (plist-put end 'endpoint
-                                (funcall (plist-get end 'endpoint) string)))
-                    (t (error (format "%s not a string or function"
-                                      (plist-get end 'endpoint))))))))
+         (match-endpoint-string
+             (lambda (endpoint-plist)
+               (when (string-match
+                      (plist-get endpoint-plist 'buffer-name) buffer-string)
+                 (unless (functionp
+                          (plist-get endpoint-plist 'update-function))
+                   (error
+                    (format "%s not a function"
+                            (plist-get endpoint-plist 'update-function))))
+                 (cond
+                  ((stringp (plist-get endpoint-plist 'endpoint))
+                   endpoint-plist)
+                  ((functionp (plist-get endpoint-plist 'endpoint))
+                   (plist-put end 'endpoint
+                              (funcall (plist-get endpoint-plist 'endpoint)
+                                       buffer-string)))
+                  (t (error
+                      (format "%s not a string or function"
+                              (plist-get endpoint-plist 'endpoint))))))))
          (endpoint (remove-if 'null
-                              (mapcar  flet
-                                       mastodon-buffer-endpoints))))
-    (if (car endpoint)
-        (car endpoint)
-      (error "%s is not a valid mastodon endpoint" string))))
+                              (mapcar match-endpoint-string
+                                      mastodon-buffer-endpoints))))
+    (or (car endpoint)
+        (error "%s is not a valid mastodon endpoint" string))))
 
 (defun mastodon-tl--more-json (endpoint id)
   "Return JSON for timeline ENDPOINT before ID."
