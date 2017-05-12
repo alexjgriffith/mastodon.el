@@ -229,19 +229,26 @@ Returns the matching plist"
             (buffer-name "public"
                          endpoint "timelines/public"
                          update-function mastodon-tl--timeline)
+            (buffer-name "tag/.*"
+                         endpoint (lambda (x) (concat "timelines/" x))
+                         update-function mastodon-tl--timeline
+                         endpoint-function)
             (buffer-name "notifications"
                          endpoint "notifications"
                          update-function
                          mastodon-notifications--notifications)))
          (flet (lambda(end)
-                 (when (equal string (plist-get end 'buffer-name))
+                 (when (string-match (plist-get end 'buffer-name) string)
                    (unless (functionp (plist-get end 'update-function))
                      (error (format "%s not a function"
                                     (plist-get end 'update-function))))
-                   (if (stringp (plist-get end 'endpoint))
-                        end
-                     (error (format "%s not a string"
-                                    (plist-get end 'endpoint)))))))
+                   (cond
+                    ((stringp (plist-get end 'endpoint)) end)
+                    ((functionp (plist-get end 'endpoint))
+                     (plist-put end 'endpoint
+                                (funcall (plist-get end 'endpoint) string)))
+                    (t (error (format "%s not a string or function"
+                                      (plist-get end 'endpoint))))))))
          (endpoint (remove-if 'null
                               (mapcar  flet
                                        mastodon-buffer-endpoints))))

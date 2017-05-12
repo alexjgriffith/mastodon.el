@@ -101,7 +101,7 @@
   (let ((mastodon-instance-url "https://instance.url"))
     (with-mock
       (mock (mastodon-http--get-json "https://instance.url/api/v1/timelines/foo?max_id=12345"))
-      (mastodon-tl--more-json "foo" 12345))))
+      (mastodon-tl--more-json "timelines/foo" 12345))))
 
 (ert-deftest mastodon-tl--byline-regular ()
   "Should format the regular toot correctly."
