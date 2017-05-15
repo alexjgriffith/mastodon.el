@@ -236,3 +236,47 @@
  | (B) (F) Account 42 (@acct42@example.space) Boosted Account 43 (@acct43@example.space) original time
   ------------")))))
 
+(ert-deftest mastodon-tl--endpoint-notifications ()
+  "Should return the appropriate endpoint string and update function format
+
+notifications."
+  (should
+   (and
+    (equalp
+     'mastodon-notifications--notifications
+     (plist-get  (mastodon-tl--get-endpoint "notifications")
+                 'update-function))
+    (equalp
+     "notifications"
+     (plist-get  (mastodon-tl--get-endpoint "notifications")
+                 'endpoint)))))
+
+(ert-deftest mastodon-tl--endpoint-tag ()
+  "Should return the appropriate endpoint string and update function for
+
+tags."
+  (should
+   (and
+    (equalp
+     'mastodon-tl--timeline
+     (plist-get  (mastodon-tl--get-endpoint "tag/test")
+                 'update-function))
+    (equalp
+     "timelines/tag/test"
+     (plist-get  (mastodon-tl--get-endpoint "tag/test")
+                 'endpoint)))))
+
+(ert-deftest mastodon-tl--endpoint-local ()
+    "Should return the appropriate endpoint string and update function for
+
+the local timeline."
+  (should
+   (and
+    (equalp
+     'mastodon-tl--timeline
+     (plist-get  (mastodon-tl--get-endpoint "public?local=true")
+                 'update-function))
+    (equalp
+     "timelines/public?local=true"
+     (plist-get  (mastodon-tl--get-endpoint "public?local=true")
+                 'endpoint)))))
