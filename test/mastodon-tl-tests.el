@@ -242,11 +242,11 @@
 notifications."
   (should
    (and
-    (equalp
+    (equal
      'mastodon-notifications--notifications
      (plist-get  (mastodon-tl--get-endpoint "notifications")
                  'update-function))
-    (equalp
+    (equal
      "notifications"
      (plist-get  (mastodon-tl--get-endpoint "notifications")
                  'endpoint)))))
@@ -257,11 +257,11 @@ notifications."
 tags."
   (should
    (and
-    (equalp
+    (equal
      'mastodon-tl--timeline
      (plist-get  (mastodon-tl--get-endpoint "tag/test")
                  'update-function))
-    (equalp
+    (equal
      "timelines/tag/test"
      (plist-get  (mastodon-tl--get-endpoint "tag/test")
                  'endpoint)))))
@@ -272,11 +272,11 @@ tags."
 the local timeline."
   (should
    (and
-    (equalp
+    (equal
      'mastodon-tl--timeline
      (plist-get  (mastodon-tl--get-endpoint "public?local=true")
                  'update-function))
-    (equalp
+    (equal
      "timelines/public?local=true"
      (plist-get  (mastodon-tl--get-endpoint "public?local=true")
                  'endpoint)))))
