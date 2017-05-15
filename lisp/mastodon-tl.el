@@ -250,7 +250,7 @@ Returns the matching plist"
                   ((stringp (plist-get endpoint-plist 'endpoint))
                    endpoint-plist)
                   ((functionp (plist-get endpoint-plist 'endpoint))
-                   (plist-put end 'endpoint
+                   (plist-put endpoint-plist 'endpoint
                               (funcall (plist-get endpoint-plist 'endpoint)
                                        buffer-string)))
                   (t (error
