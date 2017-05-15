@@ -38,9 +38,6 @@
   :prefix "mastodon-"
   :group 'external)
 
-(defconst mastodon-version "0.6.2"
-  "Current `mastodon' package version.")
-
 (defcustom mastodon-instance-url "https://mastodon.social"
   "Base URL for the Masto instance from which you toot."
   :group 'mastodon
@@ -60,6 +57,16 @@ Use. e.g. \"%c\" for your locale's date and time format."
   :group 'mastodon
   :type 'string)
 
+(defcustom mastodon-avatar-height 30
+  "Height of the user avatar images (if shown)."
+  :group 'mastodon
+  :type 'integer)
+
+(defcustom mastodon-preview-max-height 250
+  "Max height of any media attachment preview to be shown."
+  :group 'mastodon
+  :type 'integer)
+
 (defvar mastodon-mode-map
   (make-sparse-keymap)
   "Keymap for `mastodon-mode'.")
@@ -72,10 +79,25 @@ Use. e.g. \"%c\" for your locale's date and time format."
   :options '(provide-discover-context-menu)
   :group 'mastodon)
 
-(defun mastodon-version ()
-  "Message package version."
-  (interactive)
-  (message "Mastodon version %s" mastodon-version))
+(defface mastodon-handle-face
+  '((t :inherit default))
+  "Face used for user display names.")
+
+(defface mastodon-display-name-face
+  '((t :inherit warning))
+  "Face used for user display names.")
+
+(defface mastodon-boosted-face
+  '((t :inherit highlight :weight bold))
+  "Face to indicate that a toot is boosted.")
+
+(defface mastodon-boost-fave-face
+  '((t :inherit success))
+  "Face to indicate that you have boosted or favourited a toot.")
+
+(defface mastodon-cw-face
+  '((t :inherit success))
+  "Face used for content warning.")
 
 ;;;###autoload
 (defun mastodon ()
@@ -91,7 +113,7 @@ Use. e.g. \"%c\" for your locale's date and time format."
 If USER is non-nil, insert after @ symbol to begin new toot.
 If REPLY-TO-ID is non-nil, attach new toot to a conversation."
   (interactive)
-  (require 'mastodon-toot nil t)  
+  (require 'mastodon-toot nil t)
   (mastodon-toot--compose-buffer user reply-to-id))
 
 ;;;###autoload
