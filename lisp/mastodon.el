@@ -104,7 +104,7 @@ Use. e.g. \"%c\" for your locale's date and time format."
   "Connect Mastodon client to `mastodon-instance-url' instance."
   (interactive)
   (require 'mastodon-tl nil t)
-  (mastodon-tl--get "home"))
+  (mastodon-tl--get-home-timeline))
 
 ;;;###autoload
 (defun mastodon-toot (&optional user reply-to-id)
