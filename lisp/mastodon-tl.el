@@ -222,11 +222,17 @@ also render the html"
   (replace-regexp "\n\n\n | " "\n | " nil (point-min) (point-max))
   (mastodon-media--inline-images))
 
+(defun mastodon-tl--get-update-function (&optional buffer)
+  (mastodon-tl--get-buffer-property 'update-function (or buffer (current-buffer))))
+
 (defun mastodon-tl--get-endpoint (&optional buffer)
+  (mastodon-tl--get-buffer-property 'endpoint (or buffer (current-buffer)))) 
+
+(defun mastodon-tl--get-buffer-property (property &optional buffer)
   "Get `MASTODON-BUFFER-SPEC' in BUFFER or `CURRENT-BUFFER'"
   (with-current-buffer  (or buffer (current-buffer))
-    (if mastodon-buffer-spec
-        (plist-get mastodon-buffer-spec 'endpoint)
+    (if (plist-get mastodon-buffer-spec property)
+        (plist-get mastodon-buffer-spec property)
       (error "mastodon-buffer-spec is not defined for buffer %s"
              (or buffer (current-buffer))))))
 
@@ -296,9 +302,8 @@ Move forward (down) the timeline unless BACKWARD is non-nil."
   (interactive)
   (with-current-buffer (current-buffer)
     (let* ((point-before (point))
-           (endpoint-plist (mastodon-tl--get-endpoint))
-           (endpoint (plist-get endpoint-plist 'endpoint))
-           (update-function (plist-get endpoint-plist 'update-function))
+           (endpoint (mastodon-tl--get-endpoint))
+           (update-function (mastodon-tl--get-update-function))
            (id (mastodon-tl--oldest-id))
            (json (mastodon-tl--more-json endpoint id)))
       (when json
@@ -312,9 +317,8 @@ Move forward (down) the timeline unless BACKWARD is non-nil."
   "Update timeline with new toots."
   (interactive)
   (with-current-buffer (current-buffer)
-    (let* ((endpoint-plist (mastodon-tl--get-endpoint))
-           (endpoint (plist-get endpoint-plist 'endpoint))
-           (update-function (plist-get endpoint-plist 'update-function))
+    (let* ((endpoint (mastodon-tl--get-endpoint))
+           (update-function (mastodon-tl--get-update-function))
            (id (mastodon-tl--newest-id))
            (json (mastodon-tl--updated-json endpoint id)))
       (when json
