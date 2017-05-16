@@ -39,9 +39,6 @@
   :prefix "mastodon-tl-"
   :group 'mastodon)
 
-(defvar mastodon-buffer-spec nil
-  "A unique identifier and functions for each Mastodon buffer.")
-
 (defun mastodon-tl--get-federated-timeline ()
   "Opens federated timeline."
   (interactive)

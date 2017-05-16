@@ -73,6 +73,9 @@ Use. e.g. \"%c\" for your locale's date and time format."
 
 (defvar mastodon--api-version "v1")
 
+(defvar mastodon-buffer-spec nil
+  "A unique identifier and functions for each Mastodon buffer.")
+
 (defcustom mastodon-mode-hook nil
   "Hook run when entering Mastodon mode."
   :type 'hook
