@@ -184,12 +184,12 @@ also render the html"
   "Retrieve a media attachment link for TOOT if one exists."
   (let* ((media-attachements (mastodon-tl--field 'media_attachments toot))
          (media-string (mapconcat
-			(lambda (media-attachement)
-			  (let ((preview-url
-				 (cdr (assoc 'preview_url media-attachement))))
-			    (mastodon-media--get-media-link-rendering
-			     preview-url)))
-			media-attachements "")))
+                        (lambda (media-attachement)
+                          (let ((preview-url
+                                 (cdr (assoc 'preview_url media-attachement))))
+                            (mastodon-media--get-media-link-rendering
+                             preview-url)))
+                        media-attachements "")))
     (if (not (equal media-string ""))
         (concat "\n" media-string ) "")))
 
@@ -223,17 +223,15 @@ also render the html"
 
 (defun mastodon-tl--get-update-function (&optional buffer)
   "Get the UPDATE-FUNCTION stored in `mastodon-buffer-spec'"
-  (mastodon-tl--get-buffer-property 'update-function
-				    (or buffer (current-buffer))))
+  (mastodon-tl--get-buffer-property 'update-function buffer))
 
 (defun mastodon-tl--get-endpoint (&optional buffer)
   "Get the ENDPOINT stored in `mastodon-buffer-spec'"
-  (mastodon-tl--get-buffer-property 'endpoint (or buffer (current-buffer))))
+  (mastodon-tl--get-buffer-property 'endpoint buffer))
 
-(defun mastodon-tl--buffer-name ()
+(defun mastodon-tl--buffer-name (&optional buffer)
   "Get the BUFFER-NAME stored in `mastodon-buffer-spec'"
-  (mastodon-tl--get-buffer-property 'buffer-name
-				    (or buffer (current-buffer))))
+  (mastodon-tl--get-buffer-property 'buffer-name buffer ))
 
 (defun mastodon-tl--get-buffer-property (property &optional buffer)
   "Get `MASTODON-BUFFER-SPEC' in BUFFER or `CURRENT-BUFFER'"
@@ -304,49 +302,37 @@ Move forward (down) the timeline unless BACKWARD is non-nil."
                               (cdr (assoc 'descendants context)))))
     (mastodon-mode)))
 
-(defun mastodon-tl--more ()
+(defun mastodon-tl--more (&optional buffer)
   "Append older toots to timeline."
   (interactive)
-  (with-current-buffer (current-buffer)
-    (let* ((point-before (point))
-           (endpoint (mastodon-tl--get-endpoint))
-           (update-function (mastodon-tl--get-update-function))
-           (id (mastodon-tl--oldest-id))
-           (json (mastodon-tl--more-json endpoint id)))
-      (when json
-        (let ((inhibit-read-only t))
-          (goto-char (point-max))
-          (funcall update-function json)
-          (goto-char point-before)
-          (mastodon-tl--goto-next-toot))))))
+  (let* ((point-before (point))
+         (endpoint (mastodon-tl--get-endpoint))
+         (update-function (mastodon-tl--get-update-function))
+         (id (mastodon-tl--oldest-id))
+         (json (mastodon-tl--more-json endpoint id)))
+    (when json
+      (let ((inhibit-read-only t))
+        (goto-char (point-max))
+        (funcall update-function json)
+        (goto-char point-before)))))
 
 (defun mastodon-tl--update ()
   "Update timeline with new toots."
   (interactive)
-  (with-current-buffer (current-buffer)
-    (let* ((endpoint (mastodon-tl--get-endpoint))
-           (update-function (mastodon-tl--get-update-function))
-           (id (mastodon-tl--newest-id))
-           (json (mastodon-tl--updated-json endpoint id)))
-      (when json
-        (let ((inhibit-read-only t))
-          (goto-char (point-min))
-          (funcall update-function json))))))
+  (let* ((endpoint (mastodon-tl--get-endpoint))
+         (update-function (mastodon-tl--get-update-function))
+         (id (mastodon-tl--newest-id))
+         (json (mastodon-tl--updated-json endpoint id)))
+    (when json
+      (let ((inhibit-read-only t))
+        (goto-char (point-min))
+        (funcall update-function json)))))
 
-(defun mastodon-tl--init(buffer-name endpoint update-function)
+
+(defun mastodon-tl--init (buffer-name endpoint update-function)
   "Initialize BUFFER-NAME with timeline targeted by ENDPOINT.
 
-UPDATE-FUNCTION is used to recive more toots."
-  (let ((buffer (mastodon-tl--get buffer-name endpoint update-function)))
-    (with-current-buffer buffer
-      (make-local-variable 'mastodon-buffer-spec)
-      (setq mastodon-buffer-spec
-            `(buffer-name ,buffer-name
-                          endpoint ,endpoint update-function
-                          ,update-function)))))
-
-(defun mastodon-tl--get (buffer-name endpoint update-function)
-  "Display TIMELINE in buffer."
+UPDATE-FUNCTION is used to recieve more toots."
   (let* ((url (mastodon-http--api endpoint))
          (buffer (concat "*mastodon-" buffer-name "*"))
          (json (mastodon-http--get-json url)))
@@ -354,6 +340,12 @@ UPDATE-FUNCTION is used to recive more toots."
       (switch-to-buffer buffer)
       (funcall update-function json))
     (mastodon-mode)
+    (with-current-buffer buffer
+      (make-local-variable 'mastodon-buffer-spec)
+      (setq mastodon-buffer-spec
+            `(buffer-name ,buffer-name
+                          endpoint ,endpoint update-function
+                          ,update-function)))
     buffer))
 
 (provide 'mastodon-tl)
