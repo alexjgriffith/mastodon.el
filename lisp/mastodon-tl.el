@@ -96,11 +96,6 @@ Optionally start from POS."
   (mastodon-tl--goto-toot-pos 'previous-single-property-change
                               'mastodon-tl--update))
 
-(defun mastodon-tl--timeline-name ()
-  "Determine timeline from `buffer-name'."
-  (replace-regexp-in-string "\*" ""
-                            (replace-regexp-in-string "mastodon-" "" (buffer-name))))
-
 (defun mastodon-tl--remove-html (toot)
   "Remove unrendered tags from TOOT."
   (let* ((t1 (replace-regexp-in-string "<\/p>" "\n\n" toot))
@@ -230,10 +225,18 @@ also render the html"
   (mastodon-media--inline-images))
 
 (defun mastodon-tl--get-update-function (&optional buffer)
-  (mastodon-tl--get-buffer-property 'update-function (or buffer (current-buffer))))
+  "Get the UPDATE-FUNCTION stored in `mastodon-buffer-spec'"
+  (mastodon-tl--get-buffer-property 'update-function
+				    (or buffer (current-buffer))))
 
 (defun mastodon-tl--get-endpoint (&optional buffer)
-  (mastodon-tl--get-buffer-property 'endpoint (or buffer (current-buffer)))) 
+  "Get the ENDPOINT stored in `mastodon-buffer-spec'"
+  (mastodon-tl--get-buffer-property 'endpoint (or buffer (current-buffer))))
+
+(defun mastodon-tl--buffer-name ()
+  "Get the BUFFER-NAME stored in `mastodon-buffer-spec'"
+  (mastodon-tl--get-buffer-property 'buffer-name
+				    (or buffer (current-buffer))))
 
 (defun mastodon-tl--get-buffer-property (property &optional buffer)
   "Get `MASTODON-BUFFER-SPEC' in BUFFER or `CURRENT-BUFFER'"
