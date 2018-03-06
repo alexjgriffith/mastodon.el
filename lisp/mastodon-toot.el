@@ -257,6 +257,67 @@ If REPLY-TO-ID is provided, set the MASTODON-TOOT--REPLY-TO-ID var."
       (mastodon-toot--setup-as-reply reply-to-user reply-to-id))
     (mastodon-toot-mode t)))
 
+(defun mastodon-toot--url-at-point (&optional fun search-point optargs)
+  (let* ((search-point (or search-point (point)))
+         (user-address (plist-get (text-properties-at search-point) 'shr-url)))
+    (if (stringp user-address)
+        (if fun
+            (if optargs            
+                (funcall fun user-address optargs)
+              (funcall fun user-address))
+          user-address)
+      (progn (message (format "No properly formated acct at point:%s." search-point))
+             nil))))
+
+(defun mastodon-toot--acct-at-point (&optional search-point)
+  "Adds the acct for the handle under the current point to the Kill ring.
+
+This only works if the html received is formatted to contain the domain. 
+it wont work for copying accts from the by-line or if someone entered a 
+handle manually"
+  (interactive)
+  (mastodon-toot--url-at-point
+   (lambda (user-address &optional _optargs)
+     (let* ((split-address (split-string-and-unquote user-address "/"))
+            (domain (elt split-address 1))
+            (username (string-remove-prefix "@" (car (last split-address))))
+            (acct (concat "@" username "@" domain)))
+       acct))
+   search-point))
+
+(defun mastodon-toot--use-url-at-point (&optional search-point)
+  "Adds the acct for the handle under the current point to the Kill ring.
+
+This only works if the html received is formatted to contain the domain. 
+it wont work for copying accts from the by-line or if someone entered a 
+handle manually"
+  (interactive)
+  (mastodon-toot--url-at-point
+   (lambda (user-address &optional _optargs)
+     (let* ((split-address (split-string-and-unquote user-address "/"))
+            (https-p (string= (elt split-address 1) "https:"))
+            (instance (elt split-address 1))
+            (first-level  (elt split-address 2)))
+       (cond ((string= first-level "tags")
+              (let ((mastodon-instance-url (concat "https://" instance))
+                    (tag (elt split-address 3)))
+                (mastodon-tl--init
+                 (concat "tag-" tag) (concat "timelines/tag/" tag)
+                 'mastodon-tl--timeline)))
+              ((string-match-p "^@" first-level)
+               (let* ((json (mastodon-http--get-json
+                             (mastodon-http--api (concat "search?q="
+                                                        first-level))))
+                      (accounts (cdr(assoc 'accounts json)))
+                      (acct (mapcar (lambda(account) (cdr (assoc 'acct account)))
+                                    accounts)))
+                   (message (pp acct))))
+              (t (progn (eww user-address)
+                        (message "default")))
+              )
+       ))
+   search-point))
+
 (define-minor-mode mastodon-toot-mode
   "Minor mode to capture Mastodon toots."
   :group 'mastodon-toot
