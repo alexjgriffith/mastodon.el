@@ -298,13 +298,13 @@ handle manually"
             (https-p (string= (elt split-address 1) "https:"))
             (instance (elt split-address 1))
             (first-level  (elt split-address 2)))
-       (cond ((string= first-level "tags")
+       (cond ((string= first-level "tags") ;; open tag timeline
               (let ((mastodon-instance-url (concat "https://" instance))
                     (tag (elt split-address 3)))
                 (mastodon-tl--init
                  (concat "tag-" tag) (concat "timelines/tag/" tag)
                  'mastodon-tl--timeline)))
-              ((string-match-p "^@" first-level)
+              ((string-match-p "^@" first-level) ;; find user
                (let* ((json (mastodon-http--get-json
                              (mastodon-http--api (concat "search?q="
                                                         first-level))))
@@ -312,7 +312,7 @@ handle manually"
                       (acct (mapcar (lambda(account) (cdr (assoc 'acct account)))
                                     accounts)))
                    (message (pp acct))))
-              (t (progn (eww user-address)
+              (t (progn (eww user-address) ;; open link need to change from eww
                         (message "default")))
               )
        ))
